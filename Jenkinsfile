@@ -17,8 +17,8 @@ pipeline {
         stage('Insert Data into Mongo') {
             steps {
                 bat """
-                    echo db.%COLLECTION_NAME%.insertMany(${DATA_TO_INSERT}) > insert.js
-                    mongosh -u kichu-admin-group -p kichu --authenticationDatabase admin %DB_NAME% insert.js
+                    echo db.${params.COLLECTION_NAME}.insertMany(${params.DATA_TO_INSERT}) > insert.js
+                    mongosh -u kichu-admin-group -p kichu --authenticationDatabase admin ${params.DB_NAME} insert.js
                 """
             }
         }
@@ -26,8 +26,8 @@ pipeline {
         stage('Read Data') {
             steps {
                 bat """
-                    echo db.%COLLECTION_NAME%.find().forEach(function(doc) { printjson(doc); }) > read.js
-                    mongosh -u kichu-admin-group -p kichu --authenticationDatabase admin %DB_NAME% read.js
+                    echo db.${params.COLLECTION_NAME}.find().forEach(function(doc) { printjson(doc); }) > read.js
+                    mongosh -u kichu-admin-group -p kichu --authenticationDatabase admin ${params.DB_NAME} read.js
                 """
             }
         }
