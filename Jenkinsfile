@@ -4,7 +4,7 @@ pipeline {
         stage('Insert Data into Mongo') {
             steps {
                 bat '''
-                echo "db.dba_admin_fruits.insertMany([{name:'mango'},{name:'apple'},{name:'jackfruit'}])" > script.js
+                echo db.dba_admin_fruits.insertMany([{name:"mango"},{name:"apple"},{name:"jackfruit"}]) > script.js
                 mongosh krishna_DB_admin script.js
                 '''
             }
@@ -12,7 +12,7 @@ pipeline {
         stage('Read Data') {
             steps {
                 bat '''
-                echo "db.dba_admin_fruits.find().forEach(printjson)" > read.js
+                echo db.dba_admin_fruits.find().forEach(doc => printjson(doc)) > read.js
                 mongosh krishna_DB_admin read.js
                 '''
             }
