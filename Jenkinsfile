@@ -14,25 +14,22 @@ pipeline {
             }
         }
 
-        stage('Validate & Prepare Insert Script') {
+        stage('Prepare Insert Script') {
             steps {
                 script {
-                    def collectionName = params.COLLECTION_NAME
+                    // Validate JSON
                     def dataInput = params.DATA_TO_INSERT
-
                     try {
-                        // Use JsonSlurper instead of evaluate
                         def jsonSlurper = new groovy.json.JsonSlurper()
-                        def jsonArray = jsonSlurper.parseText(dataInput)
+                        def parsed = jsonSlurper.parseText(dataInput)
 
-                        if (!(jsonArray instanceof List)) {
+                        if (!(parsed instanceof List)) {
                             error "DATA_TO_INSERT must be a JSON array."
                         }
 
-                        def jsonString = new groovy.json.JsonBuilder(jsonArray).toString()
-
+                        // Write JSON directly to insert.js
                         writeFile file: 'insert.js', text: """
-db.${collectionName}.insertMany(${jsonString});
+db.${params.COLLECTION_NAME}.insertMany(${dataInput});
 """
                     } catch (Exception e) {
                         error "Invalid JSON in DATA_TO_INSERT: ${e.message}"
@@ -54,9 +51,8 @@ db.${collectionName}.insertMany(${jsonString});
         stage('Prepare Read Script') {
             steps {
                 script {
-                    def collectionName = params.COLLECTION_NAME
                     writeFile file: 'read.js', text: """
-db.${collectionName}.find().forEach(function(doc) { printjson(doc); });
+db.${params.COLLECTION_NAME}.find().forEach(function(doc) { printjson(doc); });
 """
                 }
             }
