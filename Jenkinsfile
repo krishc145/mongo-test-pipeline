@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DB_NAME', defaultValue: 'krishna_DB_admin', description: 'Database name')
-        string(name: 'COLLECTION_NAME', defaultValue: 'dba_admin_fruits', description: 'Collection name')
-        text(name: 'DATA_TO_INSERT', defaultValue: '[{"name": "mango"},{"name": "apple"},{"name": "jackfruit"}]', description: 'JSON array of documents to insert')
+        string(name: 'DB_NAME', defaultValue: 'enter your database name', description: 'Database name')
+        string(name: 'COLLECTION_NAME', defaultValue: 'your collection name', description: 'Collection name')
+        text(name: 'DATA_TO_INSERT', defaultValue: '[{"name": "<#your data>"},{"name": "<#your data>"},{"name": "<#your data>"}]', description: 'JSON array of documents to insert')
     }
 
     stages {
