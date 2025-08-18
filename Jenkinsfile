@@ -11,30 +11,21 @@ pipeline {
     stages {
         stage('Verify Java Setup') {
             steps {
-                script {
-                    timestamps {
-                        ansiColor('xterm') {
-                            bat 'echo JAVA_HOME is %JAVA_HOME%'
-                            bat 'java -version'
-                        }
-                    }
-                }
+                // Simple verification without timestamps or ansiColor plugins
+                bat 'echo JAVA_HOME is %JAVA_HOME%'
+                bat 'java -version'
             }
         }
 
         stage('Run Mongo Setup') {
             steps {
                 script {
-                    timestamps {
-                        ansiColor('xterm') {
-                            try {
-                                mongoConnector()
-                            } catch (Exception e) {
-                                echo "Mongo connector failed: ${e.getMessage()}"
-                                currentBuild.result = 'FAILURE'
-                                throw e
-                            }
-                        }
+                    try {
+                        mongoConnector()
+                    } catch (Exception e) {
+                        echo "Mongo connector failed: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
                     }
                 }
             }
