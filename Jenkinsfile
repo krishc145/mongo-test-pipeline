@@ -2,16 +2,21 @@ pipeline {
     agent any
 
     stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/krishc145/mongo-test-pipeline', branch: 'main'
+            }
+        }
+
         stage('Insert Data into Mongo') {
             steps {
                 bat '''
-                    (
-                        echo db.dba_admin_fruits.insertMany([
-                        echo   {name: "mango"},
-                        echo   {name: "apple"},
-                        echo   {name: "jackfruit"}
-                        echo ])
-                    ) > insert.js
+                    echo db.dba_admin_fruits.insertMany([
+                      {name: "mango"},
+                      {name: "apple"},
+                      {name: "jackfruit"}
+                    ]) > insert.js
+
                     mongosh krishna_DB_admin insert.js
                 '''
             }
@@ -20,11 +25,8 @@ pipeline {
         stage('Read Data') {
             steps {
                 bat '''
-                    (
-                        echo db.dba_admin_fruits.find().forEach(function(doc) {
-                        echo   printjson(doc)
-                        echo })
-                    ) > read.js
+                    echo db.dba_admin_fruits.find().forEach(function(doc) { printjson(doc); }) > read.js
+
                     mongosh krishna_DB_admin read.js
                 '''
             }
