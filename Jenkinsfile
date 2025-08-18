@@ -17,15 +17,14 @@ pipeline {
         stage('Prepare Insert Script') {
             steps {
                 script {
-                    // Parse JSON safely
-                    def jsonSlurper = new groovy.json.JsonSlurper()
-                    def parsed = jsonSlurper.parseText(params.DATA_TO_INSERT)
-
-                    if (!(parsed instanceof List)) {
-                        error "DATA_TO_INSERT must be a JSON array!"
+                    // Validate JSON without storing parsed object
+                    try {
+                        new groovy.json.JsonSlurper().parseText(params.DATA_TO_INSERT)
+                    } catch(Exception e) {
+                        error "DATA_TO_INSERT is not valid JSON: ${e.message}"
                     }
 
-                    // Write insert.js script
+                    // Write insert.js file directly from string
                     writeFile file: 'insert.js', text: """
 db.${params.COLLECTION_NAME}.insertMany(${params.DATA_TO_INSERT});
 """
@@ -45,11 +44,9 @@ db.${params.COLLECTION_NAME}.insertMany(${params.DATA_TO_INSERT});
 
         stage('Prepare Read Script') {
             steps {
-                script {
-                    writeFile file: 'read.js', text: """
+                writeFile file: 'read.js', text: """
 db.${params.COLLECTION_NAME}.find().forEach(function(doc) { printjson(doc); });
 """
-                }
             }
         }
 
