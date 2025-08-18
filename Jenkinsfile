@@ -10,7 +10,7 @@ pipeline {
                     def db = mongoOperations.createDatabase(client, "krish-db")
                     mongoOperations.createCollection(db, "myCollection")
                     mongoOperations.insertDocument(db, "myCollection", [name: "Krishnakumarchinnusamy", role: "Admin"])
-                    client.close()
+                    mongoConnector.close(client)
                 }
             }
         }
