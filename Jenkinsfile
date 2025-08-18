@@ -1,32 +1,28 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'DB_NAME', defaultValue: 'krishna_DB_admin', description: 'MongoDB database name')
-        string(name: 'COLLECTION_NAME', defaultValue: 'dba_admin_fruits', description: 'Collection name')
-        text(name: 'DATA_TO_INSERT', defaultValue: '[{"name":"mango"},{"name":"apple"},{"name":"jackfruit"}]', description: 'Data to insert as JSON array')
+    environment {
+        MONGO_USER = 'krishna-admin-group'
+        MONGO_DB   = 'krishna_DB_admin-pp'
+        COLLECTION_NAME = 'dba_admin_fruits-pp'
+        // Example JSON data to insert
+        DATA_TO_INSERT = '[{"name":"mango"},{"name":"apple"},{"name":"jackfruit"}]'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                git url: 'https://github.com/krishc145/mongo-test-pipeline', branch: 'main'
+                git branch: 'main',
+                    url: 'https://github.com/krishc145/mongo-test-pipeline',
+                    credentialsId: 'b0725751-8901-49f7-b432-5a0f0168ad35'
             }
         }
 
         stage('Prepare Insert Script') {
             steps {
                 script {
-                    // Validate JSON without storing parsed object
-                    try {
-                        new groovy.json.JsonSlurper().parseText(params.DATA_TO_INSERT)
-                    } catch(Exception e) {
-                        error "DATA_TO_INSERT is not valid JSON: ${e.message}"
-                    }
-
-                    // Write insert.js file directly from string
                     writeFile file: 'insert.js', text: """
-db.${params.COLLECTION_NAME}.insertMany(${params.DATA_TO_INSERT});
+db["${env.COLLECTION_NAME}"].insertMany(${env.DATA_TO_INSERT});
 """
                 }
             }
@@ -34,28 +30,30 @@ db.${params.COLLECTION_NAME}.insertMany(${params.DATA_TO_INSERT});
 
         stage('Insert Data into Mongo') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'mongo-authentication', usernameVariable: 'MONGO_USER', passwordVariable: 'MONGO_PASS')]) {
+                withCredentials([string(credentialsId: 'mongo-password-id', variable: 'MONGO_PASS')]) {
                     bat """
-                    mongosh -u %MONGO_USER% -p %MONGO_PASS% --authenticationDatabase admin %DB_NAME% insert.js
-                    """
+mongosh -u ${env.MONGO_USER} -p %MONGO_PASS% --authenticationDatabase admin ${env.MONGO_DB} insert.js
+"""
                 }
             }
         }
 
         stage('Prepare Read Script') {
             steps {
-                writeFile file: 'read.js', text: """
-db.${params.COLLECTION_NAME}.find().forEach(function(doc) { printjson(doc); });
+                script {
+                    writeFile file: 'read.js', text: """
+db["${env.COLLECTION_NAME}"].find().forEach(function(doc) { printjson(doc); });
 """
+                }
             }
         }
 
         stage('Read Data from Mongo') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'mongo-authentication', usernameVariable: 'MONGO_USER', passwordVariable: 'MONGO_PASS')]) {
+                withCredentials([string(credentialsId: 'mongo-password-id', variable: 'MONGO_PASS')]) {
                     bat """
-                    mongosh -u %MONGO_USER% -p %MONGO_PASS% --authenticationDatabase admin %DB_NAME% read.js
-                    """
+mongosh -u ${env.MONGO_USER} -p %MONGO_PASS% --authenticationDatabase admin ${env.MONGO_DB} read.js
+"""
                 }
             }
         }
