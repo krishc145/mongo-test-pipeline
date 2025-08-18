@@ -4,34 +4,37 @@ pipeline {
     agent any
 
     environment {
-        // Adjust this path to match your actual JDK installation
         JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17'
         PATH = "${JAVA_HOME}\\bin;${env.PATH}"
-    }
-
-    options {
-        // Optional: timestamps and ANSI color for better logs
-        timestamps()
-        ansiColor('xterm')
     }
 
     stages {
         stage('Verify Java Setup') {
             steps {
-                bat 'echo JAVA_HOME is %JAVA_HOME%'
-                bat 'java -version'
+                script {
+                    timestamps {
+                        ansiColor('xterm') {
+                            bat 'echo JAVA_HOME is %JAVA_HOME%'
+                            bat 'java -version'
+                        }
+                    }
+                }
             }
         }
 
         stage('Run Mongo Setup') {
             steps {
                 script {
-                    try {
-                        mongoConnector()
-                    } catch (Exception e) {
-                        echo "Mongo connector failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
+                    timestamps {
+                        ansiColor('xterm') {
+                            try {
+                                mongoConnector()
+                            } catch (Exception e) {
+                                echo "Mongo connector failed: ${e.getMessage()}"
+                                currentBuild.result = 'FAILURE'
+                                throw e
+                            }
+                        }
                     }
                 }
             }
