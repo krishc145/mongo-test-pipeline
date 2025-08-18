@@ -17,23 +17,18 @@ pipeline {
         stage('Prepare Insert Script') {
             steps {
                 script {
-                    // Validate JSON
-                    def dataInput = params.DATA_TO_INSERT
-                    try {
-                        def jsonSlurper = new groovy.json.JsonSlurper()
-                        def parsed = jsonSlurper.parseText(dataInput)
+                    // Parse JSON safely
+                    def jsonSlurper = new groovy.json.JsonSlurper()
+                    def parsed = jsonSlurper.parseText(params.DATA_TO_INSERT)
 
-                        if (!(parsed instanceof List)) {
-                            error "DATA_TO_INSERT must be a JSON array."
-                        }
-
-                        // Write JSON directly to insert.js
-                        writeFile file: 'insert.js', text: """
-db.${params.COLLECTION_NAME}.insertMany(${dataInput});
-"""
-                    } catch (Exception e) {
-                        error "Invalid JSON in DATA_TO_INSERT: ${e.message}"
+                    if (!(parsed instanceof List)) {
+                        error "DATA_TO_INSERT must be a JSON array!"
                     }
+
+                    // Write insert.js script
+                    writeFile file: 'insert.js', text: """
+db.${params.COLLECTION_NAME}.insertMany(${params.DATA_TO_INSERT});
+"""
                 }
             }
         }
