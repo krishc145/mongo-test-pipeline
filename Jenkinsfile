@@ -1,7 +1,6 @@
 pipeline {
     agent any
 
-    // Ask user for inputs
     parameters {
         string(name: 'DB_NAME', defaultValue: 'krishna_DB_admin', description: 'MongoDB database name')
         string(name: 'COLLECTION_NAME', defaultValue: 'dba_admin_fruits', description: 'Collection name')
@@ -18,11 +17,12 @@ pipeline {
         stage('Prepare Insert Script') {
             steps {
                 script {
-                    // Convert user input to JSON array format for MongoDB insert
                     def insertData = params.DATA_TO_INSERT
                     def collectionName = params.COLLECTION_NAME
 
-                    // Create insert.js
+                    // Wrap JSON properly and escape double quotes for Windows
+                    def escapedData = insertData.replace('"', '\\"')
+
                     writeFile file: 'insert.js', text: """
 db.${collectionName}.insertMany(${insertData});
 """
@@ -44,8 +44,6 @@ db.${collectionName}.insertMany(${insertData});
             steps {
                 script {
                     def collectionName = params.COLLECTION_NAME
-
-                    // Create read.js
                     writeFile file: 'read.js', text: """
 db.${collectionName}.find().forEach(function(doc) { printjson(doc); });
 """
