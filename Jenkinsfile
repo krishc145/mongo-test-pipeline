@@ -1,16 +1,13 @@
-@Library('shared-lib-mongo-connector@master') _
+@Library('shared-lib-mongo-connector') _
 
 pipeline {
     agent any
+
     stages {
-        stage('MongoDB Example') {
+        stage('Run Mongo Connector') {
             steps {
                 script {
-                    def client = mongoConnector.connect()
-                    def db = mongoOperations.createDatabase(client, "krish-db")
-                    mongoOperations.createCollection(db, "myCollection")
-                    mongoOperations.insertDocument(db, "myCollection", [name: "Krishnakumarchinnusamy", role: "Admin"])
-                    mongoConnector.close(client)
+                    mongoConnector()
                 }
             }
         }
