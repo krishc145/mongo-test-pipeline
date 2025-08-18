@@ -1,10 +1,11 @@
 pipeline {
     agent any
 
+    // Ask user for inputs
     parameters {
-        string(name: 'DB_NAME', defaultValue: 'enter your database name', description: 'Database name')
-        string(name: 'COLLECTION_NAME', defaultValue: 'your collection name', description: 'Collection name')
-        text(name: 'DATA_TO_INSERT', defaultValue: '[{"name": "<#your data>"},{"name": "<#your data>"},{"name": "<#your data>"}]', description: 'JSON array of documents to insert')
+        string(name: 'DB_NAME', defaultValue: 'krishna_DB_admin', description: 'MongoDB database name')
+        string(name: 'COLLECTION_NAME', defaultValue: 'dba_admin_fruits', description: 'Collection name')
+        text(name: 'DATA_TO_INSERT', defaultValue: '[{"name":"mango"},{"name":"apple"},{"name":"jackfruit"}]', description: 'Data to insert as JSON array')
     }
 
     stages {
@@ -14,21 +15,51 @@ pipeline {
             }
         }
 
-        stage('Insert Data into Mongo') {
+        stage('Prepare Insert Script') {
             steps {
-                bat """
-                    echo db.${params.COLLECTION_NAME}.insertMany(${params.DATA_TO_INSERT}) > insert.js
-                    mongosh -u kichu-admin-group -p kichu --authenticationDatabase admin ${params.DB_NAME} insert.js
-                """
+                script {
+                    // Convert user input to JSON array format for MongoDB insert
+                    def insertData = params.DATA_TO_INSERT
+                    def collectionName = params.COLLECTION_NAME
+
+                    // Create insert.js
+                    writeFile file: 'insert.js', text: """
+db.${collectionName}.insertMany(${insertData});
+"""
+                }
             }
         }
 
-        stage('Read Data') {
+        stage('Insert Data into Mongo') {
             steps {
-                bat """
-                    echo db.${params.COLLECTION_NAME}.find().forEach(function(doc) { printjson(doc); }) > read.js
-                    mongosh -u kichu-admin-group -p kichu --authenticationDatabase admin ${params.DB_NAME} read.js
-                """
+                withCredentials([usernamePassword(credentialsId: 'mongo-authentication', usernameVariable: 'MONGO_USER', passwordVariable: 'MONGO_PASS')]) {
+                    bat """
+                    mongosh -u %MONGO_USER% -p %MONGO_PASS% --authenticationDatabase admin %DB_NAME% insert.js
+                    """
+                }
+            }
+        }
+
+        stage('Prepare Read Script') {
+            steps {
+                script {
+                    def collectionName = params.COLLECTION_NAME
+
+                    // Create read.js
+                    writeFile file: 'read.js', text: """
+db.${collectionName}.find().forEach(function(doc) { printjson(doc); });
+"""
+                }
+            }
+        }
+
+        stage('Read Data from Mongo') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'mongo-authentication', usernameVariable: 'MONGO_USER', passwordVariable: 'MONGO_PASS')]) {
+                    bat """
+                    mongosh -u %MONGO_USER% -p %MONGO_PASS% --authenticationDatabase admin %DB_NAME% read.js
+                    """
+                }
             }
         }
     }
