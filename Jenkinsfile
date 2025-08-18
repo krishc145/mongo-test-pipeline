@@ -5,7 +5,7 @@ pipeline {
             steps {
                 bat '''
                 echo "db.dba_admin_fruits.insertMany([{name:'mango'},{name:'apple'},{name:'jackfruit'}])" > script.js
-                mongosh krishna-DB-admin script.js
+                mongosh krishna_DB_admin script.js
                 '''
             }
         }
@@ -13,7 +13,7 @@ pipeline {
             steps {
                 bat '''
                 echo "db.dba_admin_fruits.find().forEach(printjson)" > read.js
-                mongosh krishna-DB-admin read.js
+                mongosh krishna_DB_admin read.js
                 '''
             }
         }
