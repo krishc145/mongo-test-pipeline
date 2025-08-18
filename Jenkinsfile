@@ -1,6 +1,7 @@
 pipeline {
     agent any
 
+    // Ask user for inputs
     parameters {
         string(name: 'DB_NAME', defaultValue: 'krishna_DB_admin', description: 'MongoDB database name')
         string(name: 'COLLECTION_NAME', defaultValue: 'dba_admin_fruits', description: 'Collection name')
@@ -17,14 +18,17 @@ pipeline {
         stage('Prepare Insert Script') {
             steps {
                 script {
-                    def insertData = params.DATA_TO_INSERT
-                    def collectionName = params.COLLECTION_NAME
+                    // Validate JSON input
+                    def insertData
+                    try {
+                        insertData = readJSON text: params.DATA_TO_INSERT
+                    } catch (Exception e) {
+                        error("DATA_TO_INSERT must be valid JSON array!")
+                    }
 
-                    // Wrap JSON properly and escape double quotes for Windows
-                    def escapedData = insertData.replace('"', '\\"')
-
+                    // Write insert.js
                     writeFile file: 'insert.js', text: """
-db.${collectionName}.insertMany(${insertData});
+db.${params.COLLECTION_NAME}.insertMany(${groovy.json.JsonOutput.toJson(insertData)});
 """
                 }
             }
@@ -43,9 +47,9 @@ db.${collectionName}.insertMany(${insertData});
         stage('Prepare Read Script') {
             steps {
                 script {
-                    def collectionName = params.COLLECTION_NAME
+                    // Write read.js
                     writeFile file: 'read.js', text: """
-db.${collectionName}.find().forEach(function(doc) { printjson(doc); });
+db.${params.COLLECTION_NAME}.find().forEach(function(doc) { printjson(doc); });
 """
                 }
             }
