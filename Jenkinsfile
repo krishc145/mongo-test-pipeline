@@ -19,13 +19,7 @@ pipeline {
         stage('Run Mongo Setup') {
             steps {
                 script {
-                    try {
-                        mongoConnector()
-                    } catch (Exception e) {
-                        echo "Mongo connector failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
-                    }
+                    mongoConnector()
                 }
             }
         }
@@ -34,9 +28,6 @@ pipeline {
     post {
         always {
             echo "Pipeline completed with status: ${currentBuild.result ?: 'SUCCESS'}"
-        }
-        failure {
-            echo "Check JAVA_HOME and Mongo connector configuration."
         }
     }
 }
