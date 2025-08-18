@@ -11,7 +11,6 @@ pipeline {
     stages {
         stage('Verify Java Setup') {
             steps {
-                // Simple verification without timestamps or ansiColor plugins
                 bat 'echo JAVA_HOME is %JAVA_HOME%'
                 bat 'java -version'
             }
