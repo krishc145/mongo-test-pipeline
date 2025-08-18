@@ -1,7 +1,6 @@
 pipeline {
     agent any
 
-    // Ask user for inputs
     parameters {
         string(name: 'DB_NAME', defaultValue: 'krishna_DB_admin', description: 'MongoDB database name')
         string(name: 'COLLECTION_NAME', defaultValue: 'dba_admin_fruits', description: 'Collection name')
@@ -21,17 +20,17 @@ pipeline {
                     def collectionName = params.COLLECTION_NAME
                     def dataInput = params.DATA_TO_INSERT
 
-                    // Validate JSON input
                     try {
-                        def jsonArray = evaluate(dataInput)
+                        // Use JsonSlurper instead of evaluate
+                        def jsonSlurper = new groovy.json.JsonSlurper()
+                        def jsonArray = jsonSlurper.parseText(dataInput)
+
                         if (!(jsonArray instanceof List)) {
                             error "DATA_TO_INSERT must be a JSON array."
                         }
 
-                        // Convert to JSON string safely using JsonBuilder
                         def jsonString = new groovy.json.JsonBuilder(jsonArray).toString()
 
-                        // Create insert.js file
                         writeFile file: 'insert.js', text: """
 db.${collectionName}.insertMany(${jsonString});
 """
