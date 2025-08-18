@@ -1,33 +1,21 @@
-@Library('shared-lib-mongo-connector') _
-
 pipeline {
     agent any
-
-    environment {
-        JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17'
-        PATH = "${JAVA_HOME}\\bin;${env.PATH}"
-    }
-
     stages {
-        stage('Verify Java Setup') {
+        stage('Insert Data into Mongo') {
             steps {
-                bat 'echo JAVA_HOME is %JAVA_HOME%'
-                bat 'java -version'
+                bat '''
+                echo "db.dba_admin_fruits.insertMany([{name:'mango'},{name:'apple'},{name:'jackfruit'}])" > script.js
+                mongosh krishna-DB-admin script.js
+                '''
             }
         }
-
-        stage('Run Mongo Setup') {
+        stage('Read Data') {
             steps {
-                script {
-                    mongoConnector()
-                }
+                bat '''
+                echo "db.dba_admin_fruits.find().forEach(printjson)" > read.js
+                mongosh krishna-DB-admin read.js
+                '''
             }
-        }
-    }
-
-    post {
-        always {
-            echo "Pipeline completed with status: ${currentBuild.result ?: 'SUCCESS'}"
         }
     }
 }
