@@ -5,7 +5,7 @@ pipeline {
     parameters {
         string(name: 'DB_NAME', defaultValue: 'krishna_DB_admin', description: 'MongoDB database name')
         string(name: 'COLLECTION_NAME', defaultValue: 'dba_admin_fruits', description: 'Collection name')
-        text(name: 'DATA_TO_INSERT', defaultValue: '[{"name":"mango"},{"name":"apple"},{"name":"jackfruit"}]', description: 'Data to insert as JSON array')
+        text(name: 'DATA_TO_INSERT', defaultValue: '[{"name":"mango"},{"name":"apple"},{"name":"jackfruit"}]', description: 'Data to insert (JSON array or CSV)')
     }
 
     stages {
@@ -18,17 +18,22 @@ pipeline {
         stage('Prepare Insert Script') {
             steps {
                 script {
-                    // Validate JSON input
-                    def insertData
+                    def rawData = params.DATA_TO_INSERT
+                    def collectionName = params.COLLECTION_NAME
+
+                    // Try parsing user input as JSON
+                    def jsonArray
                     try {
-                        insertData = readJSON text: params.DATA_TO_INSERT
-                    } catch (Exception e) {
-                        error("DATA_TO_INSERT must be valid JSON array!")
+                        jsonArray = new groovy.json.JsonSlurper().parseText(rawData)
+                    } catch(Exception e) {
+                        // If parsing fails, treat input as CSV
+                        def items = rawData.split(',').collect { it.trim() }
+                        jsonArray = items.collect { [name: it] }
                     }
 
                     // Write insert.js
                     writeFile file: 'insert.js', text: """
-db.${params.COLLECTION_NAME}.insertMany(${groovy.json.JsonOutput.toJson(insertData)});
+db.${collectionName}.insertMany(${groovy.json.JsonOutput.toJson(jsonArray)});
 """
                 }
             }
@@ -47,9 +52,11 @@ db.${params.COLLECTION_NAME}.insertMany(${groovy.json.JsonOutput.toJson(insertDa
         stage('Prepare Read Script') {
             steps {
                 script {
-                    // Write read.js
+                    def collectionName = params.COLLECTION_NAME
+
+                    // Create read.js
                     writeFile file: 'read.js', text: """
-db.${params.COLLECTION_NAME}.find().forEach(function(doc) { printjson(doc); });
+db.${collectionName}.find().forEach(function(doc) { printjson(doc); });
 """
                 }
             }
