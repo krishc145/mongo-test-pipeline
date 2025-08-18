@@ -15,20 +15,29 @@ pipeline {
             }
         }
 
-        stage('Prepare Insert Script') {
+        stage('Validate & Prepare Insert Script') {
             steps {
                 script {
                     def collectionName = params.COLLECTION_NAME
-                    def dataToInsert = params.DATA_TO_INSERT
+                    def dataInput = params.DATA_TO_INSERT
 
-                    // Convert input string to JSON array safely
-                    def jsonArray = new groovy.json.JsonSlurper().parseText(dataToInsert)
-                    def jsonString = new groovy.json.JsonBuilder(jsonArray).toString()
+                    // Validate JSON input
+                    try {
+                        def jsonArray = evaluate(dataInput)
+                        if (!(jsonArray instanceof List)) {
+                            error "DATA_TO_INSERT must be a JSON array."
+                        }
 
-                    // Write insert.js for Mongo
-                    writeFile file: 'insert.js', text: """
+                        // Convert to JSON string safely using JsonBuilder
+                        def jsonString = new groovy.json.JsonBuilder(jsonArray).toString()
+
+                        // Create insert.js file
+                        writeFile file: 'insert.js', text: """
 db.${collectionName}.insertMany(${jsonString});
 """
+                    } catch (Exception e) {
+                        error "Invalid JSON in DATA_TO_INSERT: ${e.message}"
+                    }
                 }
             }
         }
@@ -47,8 +56,6 @@ db.${collectionName}.insertMany(${jsonString});
             steps {
                 script {
                     def collectionName = params.COLLECTION_NAME
-
-                    // Write read.js to fetch documents
                     writeFile file: 'read.js', text: """
 db.${collectionName}.find().forEach(function(doc) { printjson(doc); });
 """
